@@ -6,15 +6,22 @@
 #include <sstream>
 using namespace std;
 
-struct Screen {
-    string processName;
-    int currentInstructionLine;
-    int totalInstructionLines;
-    string timestamp;
-};
+// Function for ASCII Header
+void printHeader() {
+    cout << R"(
+   _____  _____  ______ _____  ______   _____ __     __
+  / ____|/ ____||  __  |  __ \|  ____| / ____|\ \   / /
+ | |    | (___  | |  | | |__) | |__   | (___   \ \_/ / 
+ | |     \___ \ | |  | |  ___/|  __|   \___ \   \   /  
+ | |____ ____) || |__| | |    | |____  ____) |   | |   
+  \_____|_____/ |______|_|    |______||_____/    |_|    
+)";
+    cout << "\033[1;32mHello, Welcome to CSOPESY commandline!\033[0m\n"; // Green text
+    cout << "\033[1;33mType 'exit' to quit, 'clear' to clear the screen\033[0m\n"; // Yellow text
+    cout << "Enter a command:\n";
+}
 
-map<string, Screen> screens;
-
+// Function to get the current timestamp
 string getCurrentTimestamp() {
     time_t now = time(0);
     tm localTime;
@@ -25,41 +32,41 @@ string getCurrentTimestamp() {
     return oss.str();
 }
 
+// Class for Console Screen
+class ConsoleScreen {
+private:
+    string processName;
+    int currentInstructionLine;
+    int totalInstructionLines;
+    string timestamp;
 
-// Function for ASCII Header
-void printHeader() {
-    cout << R"(
-   _____  _____  ______ _____  ______   _____ __     __
-  / ____|/ ____||  __  |  __ \|  ____| / ____|\ \   / /
- | |    | (___  | |  | | |__) | |__   | (___   \ \_/ / 
- | |     \___ \ | |  | |  __/ |  __|   \___ \   \   /  
- | |____ ____) || |__| | |    | |____  ____) |   | |   
-  \_____|_____/ |______|_|    |______||_____/    |_|    
-)";
-    cout << "\033[1;32mHello, Welcome to CSOPESY commandline!\033[0m\n"; // Green text
-    cout << "\033[1;33mType 'exit' to quit, 'clear' to clear the screen\033[0m\n"; // Yellow text
-    cout << "Enter a command:\n";
-}
+public:
+    ConsoleScreen() : processName(""), currentInstructionLine(0), totalInstructionLines(0), timestamp(getCurrentTimestamp()) {} // Default constructor
 
-// Function to display the screen view
-void displayScreen(const Screen& screen) {
-    cout << "\n--- SCREEN: " << screen.processName << " ---" << endl;
-    cout << "Process Name: " << screen.processName << endl;
-    cout << "Instruction: " << screen.currentInstructionLine << "/" << screen.totalInstructionLines << endl;
-    cout << "Created On: " << screen.timestamp << endl;
-    cout << "Type 'exit' to return to the main menu.\n" << endl;
-}
+    ConsoleScreen(const string& name) : processName(name), currentInstructionLine(0), totalInstructionLines(0), timestamp(getCurrentTimestamp()) {}
 
-// Function for Screen View Commands
+    // Display info
+    void display() const {  
+        cout << "\n--- SCREEN: " << processName << " ---" << endl;
+        cout << "Process Name: " << endl;
+        cout << "Instruction: " << currentInstructionLine << "/" << totalInstructionLines << endl;
+        cout << "Created On: " << timestamp << endl;
+        cout << "Type 'exit' to return to the main menu.\n" << endl;
+    }
+};
+
+map<string, ConsoleScreen> screens;
+
+// Function to display a screen
 void screenView(const string& name) {
-    Screen& screen = screens[name];
-    displayScreen(screen);
+    ConsoleScreen& screen = screens[name];
+    screen.display();
 
-    string cmd;
+    string command;
     while (true) {
         cout << "[" << name << "] $ ";
-        getline(cin, cmd);
-        if (cmd == "exit") {
+        getline(cin, command);
+        if (command == "exit") {
             cout << "\033[2J\033[1;1H";
             break;
         } else {
@@ -89,12 +96,7 @@ void recognizeCommand(const string& cmd) {
         if (screens.count(name)) {
             cout << "Screen '" << name << "' already exists.\n";
         } else {
-            screens[name] = {
-                name,
-                0,
-                0,
-                getCurrentTimestamp()
-            };
+            screens.emplace(name, ConsoleScreen(name));
             cout << "Screen '" << name << "' created.\n";
         }
 
