@@ -79,6 +79,10 @@ void recognizeCommand(const string& cmd) {
             cout << "Please provide a screen name.\n";
             return;
         }
+        if (sessions.find(name) != sessions.end()) {
+            cout << "Error: A session named '" << name << "' already exists. Use a different name or use 'screen -r " << name << "' to reconnect.\n";
+            return;
+        }
         ScreenSession newSession = {name, 3, 10, getCurrentTimestamp()};
         sessions[name] = newSession;
         drawScreenSession(newSession);
