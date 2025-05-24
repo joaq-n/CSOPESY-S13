@@ -62,7 +62,7 @@ void drawScreenSession(const ScreenSession& session) {
             printHeader();
             break;
         } else {
-            cout << "Still in screen session. Type 'exit' to return.\n";
+            cout << "Unrecognized command in screen session. Type 'exit' to return.\n";
         }
     }
 }
@@ -74,13 +74,13 @@ void recognizeCommand(const string& cmd) {
         cout << cmd << " command recognized. Doing something.\n";
     }
     else if (cmd.substr(0, 9) == "screen -s") {
-        string name = cmd.substr(10);
-        if (name.empty()) {
-            cout << "Please provide a screen name.\n";
+        if (cmd.length() <= 10 || cmd[9] != ' ' || cmd.substr(10).empty()) {
+            cout << "Error: Please provide a screen name. Usage: screen -s <name>\n";
             return;
         }
+        string name = cmd.substr(10);
         if (sessions.find(name) != sessions.end()) {
-            cout << "Error: A session named '" << name << "' already exists. Use a different name or use 'screen -r " << name << "' to reconnect.\n";
+            cout << "Error: A session named '" << name << "' already exists. Use a different name or 'screen -r <name>'.\n";
             return;
         }
         ScreenSession newSession = {name, 3, 10, getCurrentTimestamp()};
@@ -88,11 +88,15 @@ void recognizeCommand(const string& cmd) {
         drawScreenSession(newSession);
     }
     else if (cmd.substr(0, 9) == "screen -r") {
+        if (cmd.length() <= 10 || cmd[9] != ' ' || cmd.substr(10).empty()) {
+            cout << "Error: Please provide a screen name. Usage: screen -r <name>\n";
+            return;
+        }
         string name = cmd.substr(10);
         if (sessions.find(name) != sessions.end()) {
             drawScreenSession(sessions[name]);
         } else {
-            cout << "No such session named '" << name << "'. Use screen -s <name> to create.\n";
+            cout << "Error: No session named '" << name << "' found. Use 'screen -s <name>' to create it.\n";
         }
     }
     else if (cmd == "clear") {
