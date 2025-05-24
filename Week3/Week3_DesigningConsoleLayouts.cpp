@@ -56,7 +56,7 @@ void drawScreenSession(const ScreenSession& session) {
 
     string cmd;
     while (true) {
-        cout << "> ";
+        cout << "[" << session.name << "] $ ";
         getline(cin, cmd);
         if (cmd == "exit") {
             printHeader();
