@@ -129,6 +129,7 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
     }
 }
 
+// Executes a single instruction from a process during tick
 bool Process::executeNextInstruction(int delays_per_exec) {
      if (sleep_ticks_remaining > 0) {
          state = ProcessState::WAITING;
@@ -153,6 +154,8 @@ bool Process::executeNextInstruction(int delays_per_exec) {
     return true;
 }
 
+// Specific instruction execution logic
+// Handles PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR_START, FOR
 void Process::executeInstruction(const Instruction& inst) {
     switch (inst.type) {
         case InstructionType::PRINT: {
@@ -204,7 +207,7 @@ void Process::executeInstruction(const Instruction& inst) {
         }
         case InstructionType::FOR_END: {
             if (for_stack_size > 0) {
-                int current_level = for_stack_size - 1;
+                int current_level = for_stack_size - 1; // Top of stack
                 int for_start_index = for_stack[current_level];
                 
                 // Get the FOR_START instruction to check repeat count
@@ -212,7 +215,7 @@ void Process::executeInstruction(const Instruction& inst) {
                 
                 // Check if we need more iterations
                 if (for_current_repeat[current_level] < for_start_inst.for_repeats) {
-                    for_current_repeat[current_level]++; // Increment iteration count
+                    for_current_repeat[current_level]++;
                     current_instruction = for_start_index; // Jump back to FOR_START
                 } else {
                     for_stack_size--;
