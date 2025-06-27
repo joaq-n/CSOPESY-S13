@@ -32,30 +32,6 @@ private:
     bool initialized = false;
     bool running = true;
     Process* current_screen_process = nullptr;
-    
-public:
-    void run() {
-        printHeader();
-        std::cout << "Type 'initialize' to start, or 'exit' to quit.\n\n";
-        while (running) {
-            if (current_screen_process) {
-                std::cout << "[" << current_screen_process->name << "] >> ";
-            } else {
-                std::cout << ">> ";
-            }
-            
-            std::string input;
-            std::getline(std::cin, input);
-            
-            if (current_screen_process) {
-                processScreenCommand(input);
-            } else {
-                processMainMenuCommand(input);
-            }
-        }
-    }
-    
-private:
 
     // Handles commands: initialize, screen -s, screen -r, screen -ls, scheduler-start, scheduler-stop, report-util, exit
     void processMainMenuCommand(const std::string& command) {
@@ -379,6 +355,29 @@ private:
         
         return tokens;
     }
+
+    public:
+    void run() {
+        printHeader();
+        std::cout << "Type 'initialize' to start, or 'exit' to quit.\n\n";
+        while (running) {
+            if (current_screen_process) {
+                std::cout << "[" << current_screen_process->name << "] >> ";
+            } else {
+                std::cout << ">> ";
+            }
+            
+            std::string input;
+            std::getline(std::cin, input);
+            
+            if (current_screen_process) {
+                processScreenCommand(input);
+            } else {
+                processMainMenuCommand(input);
+            }
+        }
+    }
+    
 };
 
 int main() {
