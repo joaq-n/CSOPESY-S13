@@ -12,17 +12,7 @@
 #include "process.h"
 #include "config.h"
 
-void printHeader() {
-    std::cout << R"(
-   _____   _____  ______ _____  ______   _____ __     __
-  / ____| / ____||  __  |  __ \|  ____| / ___| \ \   / /
- | |     | (___  | |  | | |__) | |__   | (__    \ \_/ / 
- | |      \___ \ | |  | |  __ /|  __|   \___ \   \   /  
- | |____  ____) || |__| | |    | |____  ____) |   | |   
-  \_____||_____/ |______|_|    |______||_____/    |_|   
-  
-)";
-}
+
 
 // Command line interface class
 class CLI {
@@ -33,6 +23,17 @@ private:
     bool running = true;
     Process* current_screen_process = nullptr;
 
+    void printHeader() {
+    std::cout << R"(
+   _____   _____  ______ _____  ______   _____ __     __
+  / ____| / ____||  __  |  __ \|  ____| / ___| \ \   / /
+ | |     | (___  | |  | | |__) | |__   | (__    \ \_/ / 
+ | |      \___ \ | |  | |  __ /|  __|   \___ \   \   /  
+ | |____  ____) || |__| | |    | |____  ____) |   | |   
+  \_____||_____/ |______|_|    |______||_____/    |_|   
+  
+)";
+    }
     // Handles commands: initialize, screen -s, screen -r, screen -ls, scheduler-start, scheduler-stop, report-util, exit
     void processMainMenuCommand(const std::string& command) {
         std::vector<std::string> tokens = tokenize(command);
