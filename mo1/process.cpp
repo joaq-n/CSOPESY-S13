@@ -132,18 +132,24 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
 bool Process::executeNextInstruction(int delays_per_exec) {
      if (sleep_ticks_remaining > 0) {
          state = ProcessState::WAITING;
+         return true;
      }
-     current_instruction++;
+     
      if (current_instruction >= instructions.size()) {
         state = ProcessState::FINISHED;
         finish_time = std::chrono::steady_clock::now();
         return false; // Process finished
     }
 
+    executeInstruction(instructions[current_instruction]);
+    total_instructions_executed++;
+
     if (delays_per_exec > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(delays_per_exec));
     }
     
+    current_instruction++;
+
     return true;
 }
 

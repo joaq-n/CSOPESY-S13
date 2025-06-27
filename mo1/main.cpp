@@ -102,6 +102,7 @@ private:
                     }
                 }
                 
+                
                 std::cout << "\nLogs:\n";
                 for (const auto& log : current_screen_process->output_logs) {
                     std::cout << log << "\n";
@@ -209,7 +210,6 @@ private:
         auto running_processes = scheduler.getRunningProcesses();
         auto finished_processes = scheduler.getFinishedProcesses();
         
-        // need to fix layout 
         std::cout << "Running processes: " << running_processes.size() << "\n";
         for (const auto& process : running_processes) {
             std::cout << "  " << process->name << " (ID: " << process->id << ")\n";
@@ -217,7 +217,7 @@ private:
         
         std::cout << "\nFinished processes: " << finished_processes.size() << "\n";
         for (const auto& process : finished_processes) {
-            std::cout << process->name << " (ID: " << process->id << ")\n";
+            std::cout << "" << process->name << " (ID: " << process->id << ")\n";
         }
         
         saveReport();
@@ -334,6 +334,7 @@ private:
         file << "Cores available: " << scheduler.getAvailableCores() << "\n";
         file << "Current CPU ticks: " << scheduler.getCurrentTicks() << "\n\n";
         
+        // need to fix layout 
         auto running_processes = scheduler.getRunningProcesses();
         auto finished_processes = scheduler.getFinishedProcesses();
         
