@@ -20,7 +20,12 @@ class Process {
 private:
     static int next_id;
     static std::mutex id_mutex;
-    
+    void executeInstruction(const Instruction& inst);
+    std::string evaluateExpression(const std::string& expr);
+    void generateInstructionsRecursive(int target_count, std::mt19937& gen, std::uniform_int_distribution<>& ins_type_dist,
+        std::uniform_int_distribution<>& value_dist, std::uniform_int_distribution<>& sleep_dist, std::uniform_int_distribution<>& for_repeat_dist,
+        std::uniform_int_distribution<>& for_inner_count_dist, int nesting_level);
+
 public:
     int id;
     std::string name;
@@ -49,17 +54,6 @@ public:
         if (instructions.empty()) return 0.0;
         return (static_cast<double>(total_instructions_executed) / instructions.size()) * 100.0;
     }
-    
-private:
-    void executeInstruction(const Instruction& inst);
-    std::string evaluateExpression(const std::string& expr);
-    void generateInstructionsRecursive(int target_count, std::mt19937& gen, 
-        std::uniform_int_distribution<>& ins_type_dist,
-        std::uniform_int_distribution<>& value_dist,
-        std::uniform_int_distribution<>& sleep_dist,
-        std::uniform_int_distribution<>& for_repeat_dist,
-        std::uniform_int_distribution<>& for_inner_count_dist,
-        int nesting_level);
 };
 
 #endif

@@ -17,7 +17,7 @@ private:
     std::queue<Process*> ready_queue;
     std::vector<Process*> running_processes;
     std::vector<bool> cpu_cores_busy;
-    std::vector<int> process_time_slice; // Time slice remaining for each core
+    std::vector<int> process_time_slice;
     std::atomic<bool> scheduler_running{false};
     std::atomic<bool> process_generation_active{false};
     std::atomic<long long> cpu_ticks{0};
@@ -26,7 +26,13 @@ private:
     std::thread process_generator_thread;
     int process_counter = 1;
     int next_process_id = 1;
-    
+
+    void schedulerLoop();
+    void processGeneratorLoop();
+    void scheduleProcess();
+    void executeProcesses();
+    std::string generateProcessName();
+
 public:
     Scheduler() = default;
     ~Scheduler() { stopScheduler(); }
@@ -45,13 +51,6 @@ public:
     int getUsedCores();
     int getAvailableCores();
     long long getCurrentTicks() { return cpu_ticks; }
-    
-private:
-    void schedulerLoop();
-    void processGeneratorLoop();
-    void scheduleProcess();
-    void executeProcesses();
-    std::string generateProcessName();
 };
 
 #endif
