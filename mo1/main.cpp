@@ -205,6 +205,7 @@ private:
         auto running_processes = scheduler.getRunningProcesses();
         auto finished_processes = scheduler.getFinishedProcesses();
         
+        // need to fix layout 
         std::cout << "Running processes: " << running_processes.size() << "\n";
         for (const auto& process : running_processes) {
             std::cout << "  " << process->name << " (ID: " << process->id << ")\n";
@@ -212,7 +213,7 @@ private:
         
         std::cout << "\nFinished processes: " << finished_processes.size() << "\n";
         for (const auto& process : finished_processes) {
-            std::cout << "  " << process->name << " (ID: " << process->id << ")\n";
+            std::cout << process->name << " (ID: " << process->id << ")\n";
         }
         
         saveReport();
