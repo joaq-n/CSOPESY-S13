@@ -195,7 +195,7 @@ void Scheduler::scheduleProcess() {
 }
 
 void Scheduler::executeProcesses() {
-    // First, handle all sleeping processes (not assigned to cores)
+    // Handle all sleeping processes (not assigned to cores)
     for (const auto& process_ptr : all_processes) {
         Process* process = process_ptr.get();
         if (process->state == ProcessState::WAITING && process->sleep_ticks_remaining > 0) {
@@ -207,7 +207,7 @@ void Scheduler::executeProcesses() {
         }
     }
     
-    // Then handle processes running on CPU cores
+    // Handle processes running on CPU cores
     for (int i = 0; i < config.num_cpu; i++) {
         if (cpu_cores_busy[i] && running_processes[i]) {
             Process* process = running_processes[i];
@@ -243,7 +243,6 @@ void Scheduler::executeProcesses() {
                     process_time_slice[i] = 0;
                 } else if (process->state == ProcessState::WAITING) {
                     // Process went to sleep, remove from CPU
-                    // CLEAR CORE ASSIGNMENT when going to sleep
                     process->cpu_core_assigned = -1;
                     running_processes[i] = nullptr;
                     cpu_cores_busy[i] = false;

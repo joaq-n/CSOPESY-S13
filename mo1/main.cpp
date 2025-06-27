@@ -24,7 +24,7 @@ void printHeader() {
 )";
 }
 
-// CLI Class
+// Command line interface class
 class CLI {
 private:
     Scheduler scheduler;
@@ -56,6 +56,8 @@ public:
     }
     
 private:
+
+    // Handles commands: initialize, screen -s, screen -r, screen -ls, scheduler-start, scheduler-stop, report-util, exit
     void processMainMenuCommand(const std::string& command) {
         std::vector<std::string> tokens = tokenize(command);
         
@@ -86,14 +88,13 @@ private:
             handleSchedulerStop();
         } else if (cmd == "report-util") {
             handleReportUtil();
-        } else if (cmd == "debug") {
-            debugProcessStates();
         } else {
             std::cout << "Unknown command: " << cmd << "\n";
             std::cout << "Available commands: initialize, exit, screen, scheduler-start, scheduler-stop, report-util\n";
         }
     }
 
+    // Handles commands: process-smi, exit
     void processScreenCommand(const std::string& command) {
         std::vector<std::string> tokens = tokenize(command);
         
@@ -109,6 +110,7 @@ private:
             if (current_screen_process) {
                 std::cout << "\nProcess: " << current_screen_process->name << "\n";
                 std::cout << "ID: " << current_screen_process->id << "\n";
+                
                 
                 if (current_screen_process->isFinished()) {
                     std::cout << "Status: Finished!\n";
@@ -225,7 +227,7 @@ private:
         }
         
         saveReport();
-        std::cout << "\nReport saved to report-util.txt\n";
+        std::cout << "\nReport saved to csopesy-log.txt\n";
     }
 
     void handleScreenList() {
@@ -275,40 +277,6 @@ private:
         }
     }
 
-    void debugProcessStates() {
-        auto running_processes = scheduler.getRunningProcesses();
-        
-        std::cout << "\n=== DEBUG: Process States ===\n";
-        for (const auto& process : running_processes) {
-            std::cout << process->name << " - State: ";
-            switch (process->state) {
-                case ProcessState::READY: std::cout << "READY"; break;
-                case ProcessState::RUNNING: std::cout << "RUNNING"; break;
-                case ProcessState::WAITING: std::cout << "WAITING"; break;
-                case ProcessState::FINISHED: std::cout << "FINISHED"; break;
-            }
-            std::cout << " - Core: " << process->cpu_core_assigned;
-            std::cout << " - Instruction: " << process->current_instruction + 1 << "/" << process->instructions.size();
-            std::cout << " - Sleep ticks: " << process->sleep_ticks_remaining;
-            
-            // Show current instruction type
-            if (process->current_instruction < process->instructions.size()) {
-                auto& inst = process->instructions[process->current_instruction];
-                std::cout << " - Current inst: ";
-                switch (inst.type) {
-                    case InstructionType::PRINT: std::cout << "PRINT"; break;
-                    case InstructionType::DECLARE: std::cout << "DECLARE"; break;
-                    case InstructionType::ADD: std::cout << "ADD"; break;
-                    case InstructionType::SUBTRACT: std::cout << "SUBTRACT"; break;
-                    case InstructionType::SLEEP: std::cout << "SLEEP(" << inst.args[0] << ")"; break;
-                    case InstructionType::FOR_START: std::cout << "FOR_START"; break;
-                    case InstructionType::FOR_END: std::cout << "FOR_END"; break;
-                }
-            }
-            std::cout << "\n";
-        }
-        std::cout << "==============================\n\n";
-    }
     void handleExit() {
         scheduler.stopScheduler();
         running = false;
@@ -358,7 +326,7 @@ private:
     }
 
     void saveReport() {
-        std::ofstream file("report-util.txt");
+        std::ofstream file("csopesy-log.txt");
         
         auto now = std::chrono::system_clock::now();
         auto time_t = std::chrono::system_clock::to_time_t(now);
