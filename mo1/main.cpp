@@ -111,7 +111,7 @@ private:
                 std::cout << "\nProcess: " << current_screen_process->name << "\n";
                 std::cout << "ID: " << current_screen_process->id << "\n";
                 
-                
+                // need to fix layout of this
                 if (current_screen_process->isFinished()) {
                     std::cout << "Status: Finished!\n";
                 } else {
@@ -146,18 +146,27 @@ private:
             std::cout << "CPU cores: " << config.num_cpu << "\n";
             std::cout << "Scheduler: " << config.scheduler;
             if (config.scheduler == "rr") {
-                std::cout << " (Round Robin)";
+                std::cout << "(Round Robin)";
+                std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
             } else if (config.scheduler == "fcfs") {
-                std::cout << " (First Come First Serve)";
+                std::cout << "(First Come First Serve)";
             }
             std::cout << "\n";
-            if (config.scheduler == "rr") {
-                std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
-            }
             std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
             std::cout << "Instructions per process: " << config.min_ins << "-" << config.max_ins << "\n";
         } else {
             std::cout << "Failed to load configuration. Using default values.\n";
+            std::cout << "CPU cores: " << config.num_cpu << "\n";
+            std::cout << "Scheduler: " << config.scheduler;
+            if (config.scheduler == "rr") {
+                std::cout << "(Round Robin)";
+                std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
+            } else if (config.scheduler == "fcfs") {
+                std::cout << "(First Come First Serve)";
+            }
+            std::cout << "\n";
+            std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
+            std::cout << "Instructions per process: " << config.min_ins << "-" << config.max_ins << "\n";
             scheduler.initialize(config);
             scheduler.startScheduler();
             initialized = true;

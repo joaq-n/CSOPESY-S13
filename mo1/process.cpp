@@ -12,18 +12,17 @@ Process::Process(const std::string& process_name) :
     sleep_ticks_remaining(0),
     cpu_core_assigned(-1),
     creation_time(std::chrono::steady_clock::now()),
-        total_instructions_executed(0),
+    total_instructions_executed(0),
     for_stack_size(0) {
-    
-    std::lock_guard<std::mutex> lock(id_mutex);
-    id = next_id++;
-    
-    // Initialize for loop tracking
-    for (int i = 0; i < 3; i++) {
-        for_stack[i] = 0;
-        for_current_repeat[i] = 0;
+        std::lock_guard<std::mutex> lock(id_mutex);
+        id = next_id++;
+        
+        // Initialize for loop tracking
+        for (int i = 0; i < 3; i++) {
+            for_stack[i] = 0;
+            for_current_repeat[i] = 0;
+        }
     }
-}
 
 void Process::generateRandomInstructions(int min_ins, int max_ins) {
     std::random_device rd;

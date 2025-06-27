@@ -11,7 +11,7 @@ struct Config {
     int quantum_cycles = 5;
     int batch_process_freq = 10;
     int min_ins = 100;
-    int max_ins = 1000;
+    int max_ins = 100;
     int delays_per_exec = 0;
 };
 
