@@ -3,6 +3,8 @@
 
 #include <string>
 
+// Default configuration for the scheduler
+// This can be loaded from config.txt
 struct Config {
     int num_cpu = 4;
     std::string scheduler = "fcfs";

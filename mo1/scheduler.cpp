@@ -184,7 +184,7 @@ void Scheduler::scheduleProcess() {
                     process->cpu_core_assigned = i;
                     running_processes[i] = process;
                     cpu_cores_busy[i] = true;
-                    process_time_slice[i] = config.quantum_cycles; // Set time quantum
+                    process_time_slice[i] = config.quantum_cycles;
                     scheduled = true;
                     break;
                 }

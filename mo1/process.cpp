@@ -33,7 +33,7 @@ void Process::generateRandomInstructions(int min_ins, int max_ins) {
     std::uniform_int_distribution<> value_dist(1, 100);
     std::uniform_int_distribution<> sleep_dist(1, 10);
     std::uniform_int_distribution<> for_repeat_dist(2, 5);
-    std::uniform_int_distribution<> for_inner_count_dist(1, 3); // How many instructions inside for loop
+    std::uniform_int_distribution<> for_inner_count_dist(1, 3);
     
     int instruction_count = ins_count_dist(gen);
     generateInstructionsRecursive(instruction_count, gen, ins_type_dist, value_dist, sleep_dist, for_repeat_dist, for_inner_count_dist, 0);
@@ -53,11 +53,7 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
         Instruction inst;
         int type = ins_type_dist(gen);
         
-        // Limit FOR loops based on nesting level and remaining instructions
-        if (type == 5 && (nesting_level >= 3 || target_count - current_count < 4)) {
-            type = 0; // Convert to PRINT if too deep or not enough space
-        }
-        
+        // Basic Process Instructions
         switch (type) {
             case 0: // PRINT
                 inst.type = InstructionType::PRINT;
@@ -96,7 +92,7 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
                 break;
             case 5: // FOR
                 {
-                    // Add FOR_START
+                    // Add FOR_START (start of loop)
                     inst.type = InstructionType::FOR_START;
                     inst.for_repeats = for_repeat_dist(gen);
                     instructions.push_back(inst);
@@ -113,7 +109,7 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
                         sleep_dist, for_repeat_dist, for_inner_count_dist, nesting_level + 1);
                     current_count += inner_count;
                     
-                    // Add FOR_END
+                    // Add FOR_END (end of loop)
                     Instruction end_inst;
                     end_inst.type = InstructionType::FOR_END;
                     instructions.push_back(end_inst);
@@ -130,32 +126,6 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
     }
 }
 
-// bool Process::executeNextInstruction(int delays_per_exec) {
-//     if (current_instruction >= instructions.size()) {
-//         state = ProcessState::FINISHED;
-//         finish_time = std::chrono::steady_clock::now();
-//         return false;
-//     }
-    
-//     if (sleep_ticks_remaining > 0) {
-//         sleep_ticks_remaining--;
-//         if (sleep_ticks_remaining == 0) {
-//             state = ProcessState::READY;
-//         }
-//         return true;
-//     }
-    
-//     executeInstruction(instructions[current_instruction]);
-//     total_instructions_executed++;
-    
-//     // Simulate execution delay
-//     if (delays_per_exec > 0) {
-//         std::this_thread::sleep_for(std::chrono::milliseconds(delays_per_exec));
-//     }
-    
-//     current_instruction++;
-//     return current_instruction < instructions.size();
-// }
 bool Process::executeNextInstruction(int delays_per_exec) {
      if (sleep_ticks_remaining > 0) {
          state = ProcessState::WAITING;
@@ -167,6 +137,10 @@ bool Process::executeNextInstruction(int delays_per_exec) {
         return false; // Process finished
     }
 
+    if (delays_per_exec > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(delays_per_exec));
+    }
+    
     return true;
 }
 
@@ -245,7 +219,6 @@ std::string Process::evaluateExpression(const std::string& expr) {
     if (variables.find(expr) != variables.end()) {
         return std::to_string(variables[expr]);
     }
-    // Otherwise, assume it's a literal value
     return expr;
 }
 
