@@ -155,6 +155,7 @@ private:
             std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
             std::cout << "Instructions per process: " << config.min_ins << "-" << config.max_ins << "\n";
         } else {
+            // In case it fails, load default values from config.h
             std::cout << "Failed to load configuration. Using default values.\n";
             std::cout << "CPU cores: " << config.num_cpu << "\n";
             std::cout << "Scheduler: " << config.scheduler;
