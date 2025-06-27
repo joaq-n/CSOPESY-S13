@@ -45,7 +45,6 @@ void Scheduler::stopProcessGeneration() {
 Process* Scheduler::createProcess(const std::string& name) {
     std::lock_guard<std::mutex> lock(scheduler_mutex);
     
-    // Fixed: Process constructor only takes the name parameter
     std::unique_ptr<Process> process(new Process(name));
     process->generateRandomInstructions(config.min_ins, config.max_ins);
     
@@ -131,7 +130,7 @@ void Scheduler::schedulerLoop() {
             executeProcesses();
         }
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 100ms per tick
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
@@ -224,7 +223,7 @@ void Scheduler::executeProcesses() {
                         process->state = ProcessState::READY;
                         ready_queue.push(process);
                         
-                        // CLEAR CORE ASSIGNMENT when preempting
+                        // clear core assignment when preempting
                         process->cpu_core_assigned = -1;
                         running_processes[i] = nullptr;
                         cpu_cores_busy[i] = false;
@@ -234,7 +233,7 @@ void Scheduler::executeProcesses() {
                 }
                 
                 if (!continuing || process->state == ProcessState::FINISHED) {
-                    // CLEAR CORE ASSIGNMENT when process finishes
+                    // clear core assignment when process finishes
                     if (process->state == ProcessState::FINISHED) {
                         process->cpu_core_assigned = -1;
                     }
