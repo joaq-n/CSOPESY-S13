@@ -24,6 +24,8 @@ Process::Process(const std::string& process_name) :
         }
     }
 
+// Sets up parameters for generateInstructionsRecursive()
+// Initiates instruction generation
 void Process::generateRandomInstructions(int min_ins, int max_ins) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -38,8 +40,8 @@ void Process::generateRandomInstructions(int min_ins, int max_ins) {
     generateInstructionsRecursive(instruction_count, gen, ins_type_dist, value_dist, sleep_dist, for_repeat_dist, for_inner_count_dist, 0);
 }
 
-// Generates random instructions for the processes (PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR)
-// For loops create processes within its loop
+// Assigns instructions for the processes (PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR)
+// Handles for loops and processes within it
 void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen, 
     std::uniform_int_distribution<>& ins_type_dist,
     std::uniform_int_distribution<>& value_dist,
