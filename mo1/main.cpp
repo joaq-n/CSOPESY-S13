@@ -136,6 +136,7 @@ private:
         }
     }
 
+    // For setting up
     void handleInitialize() {
         if (loadConfig()) {
             scheduler.initialize(config);
@@ -174,6 +175,7 @@ private:
         }
     }
 
+    // Screen command handling (-s, -r, -ls)
     void handleScreen(const std::string& args) {
         std::vector<std::string> tokens = tokenize(args);
         
