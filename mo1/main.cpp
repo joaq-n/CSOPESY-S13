@@ -124,10 +124,10 @@ private:
             std::cout << "CPU cores: " << config.num_cpu << "\n";
             std::cout << "Scheduler: " << config.scheduler;
             if (config.scheduler == "rr") {
-                std::cout << "(Round Robin)";
+                std::cout << " (Round Robin)";
                 std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
             } else if (config.scheduler == "fcfs") {
-                std::cout << "(First Come First Serve)";
+                std::cout << " (First Come First Serve)";
             }
             std::cout << "\n";
             std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
@@ -138,10 +138,10 @@ private:
             std::cout << "CPU cores: " << config.num_cpu << "\n";
             std::cout << "Scheduler: " << config.scheduler;
             if (config.scheduler == "rr") {
-                std::cout << "(Round Robin)";
+                std::cout << " (Round Robin)";
                 std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
             } else if (config.scheduler == "fcfs") {
-                std::cout << "(First Come First Serve)";
+                std::cout << " (First Come First Serve)";
             }
             std::cout << "\n";
             std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
