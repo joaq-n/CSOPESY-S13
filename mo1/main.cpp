@@ -170,12 +170,16 @@ private:
         } else if (tokens[0] == "-r" && tokens.size() >= 2) {
             std::string process_name = tokens[1];
             Process* process = scheduler.findProcess(process_name);
-            if (process && !process->isFinished()) {
+            if (process) {
                 current_screen_process = process;
                 clearScreen();
-                std::cout << "Attached to process: " << process_name << "\n";
+                if (process->isFinished()) {
+                    std::cout << "Attached to finished process: " << process_name << "\n";
+                } else {
+                    std::cout << "Attached to process: " << process_name << "\n";
+                }
             } else {
-                std::cout << "Process " << process_name << " not found or finished.\n";
+                std::cout << "Process " << process_name << " not found.\n";
             }
         } else if (tokens[0] == "-ls") {
             handleScreenList();
