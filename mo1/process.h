@@ -7,6 +7,7 @@
 #include <mutex>
 #include <chrono>
 #include <random>
+#include <cstdint>
 #include "instruction.h"
 
 enum class ProcessState {
@@ -34,10 +35,10 @@ public:
     int current_instruction;
     std::map<std::string, uint16_t> variables;
     std::vector<std::string> output_logs;
-    int sleep_ticks_remaining;
+    uint8_t sleep_ticks_remaining;
     int cpu_core_assigned;
-    std::chrono::steady_clock::time_point creation_time;
-    std::chrono::steady_clock::time_point finish_time;
+    std::chrono::system_clock::time_point creation_time;
+    std::chrono::system_clock::time_point finish_time;
     int for_stack[3]; // For nested loops (max 3 levels)
     int for_stack_size;
     int for_current_repeat[3];
@@ -45,6 +46,7 @@ public:
     
     Process(const std::string& process_name);
     
+    uint16_t clamp(int64_t value);
     void generateRandomInstructions(int min_ins, int max_ins);
     bool executeNextInstruction(int delays_per_exec);
     void addOutput(const std::string& output);

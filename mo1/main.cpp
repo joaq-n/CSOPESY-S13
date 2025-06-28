@@ -33,8 +33,12 @@ private:
   \_____||_____/ |______|_|    |______||_____/    |_|   
   
 )";
+    if (initialized) {
+        std::cout << "Type a command\n";
+        }
     }
     // Handles commands: initialize, screen -s, screen -r, screen -ls, scheduler-start, scheduler-stop, report-util, exit
+    // need to initialize before running any command
     void processMainMenuCommand(const std::string& command) {
         std::vector<std::string> tokens = tokenize(command);
         
@@ -102,7 +106,6 @@ private:
                     }
                 }
                 
-                
                 std::cout << "\nLogs:\n";
                 for (const auto& log : current_screen_process->output_logs) {
                     std::cout << log << "\n";
@@ -125,12 +128,11 @@ private:
             std::cout << "CPU cores: " << config.num_cpu << "\n";
             std::cout << "Scheduler: " << config.scheduler;
             if (config.scheduler == "rr") {
-                std::cout << " (Round Robin)";
+                std::cout << " (Round Robin)\n";
                 std::cout << "Quantum cycles: " << config.quantum_cycles << "\n";
             } else if (config.scheduler == "fcfs") {
-                std::cout << " (First Come First Serve)";
+                std::cout << " (First Come First Serve)\n";
             }
-            std::cout << "\n";
             std::cout << "Process generation frequency: " << config.batch_process_freq << " ticks\n";
             std::cout << "Instructions per process: " << config.min_ins << "-" << config.max_ins << "\n";
         } else {
@@ -235,10 +237,11 @@ private:
         std::cout << "Running processes:\n";
         for (const auto& process : running_processes) {
             // Show ALL processes that are not finished (RUNNING, READY, or WAITING)
-            if (process->state != ProcessState::FINISHED) {
-                // Get current timestamp
-                auto now = std::chrono::system_clock::now();
-                auto time_t = std::chrono::system_clock::to_time_t(now);
+            // if (process->state != ProcessState::FINISHED) {
+
+            // Show only processes running on a core
+            if (process->state != ProcessState::FINISHED && process->cpu_core_assigned != -1) {
+                auto time_t = std::chrono::system_clock::to_time_t(process->creation_time);
                 std::tm* tm_ptr = std::localtime(&time_t);
                 
                 std::ostringstream timestamp;
@@ -256,9 +259,7 @@ private:
     
         std::cout << "\nFinished processes:\n";
         for (const auto& process : finished_processes) {
-            // Get current timestamp for finished processes
-            auto now = std::chrono::system_clock::now();
-            auto time_t = std::chrono::system_clock::to_time_t(now);
+            auto time_t = std::chrono::system_clock::to_time_t(process->finish_time);
             std::tm* tm_ptr = std::localtime(&time_t);
             
             std::ostringstream timestamp;
@@ -334,18 +335,26 @@ private:
         file << "Cores available: " << scheduler.getAvailableCores() << "\n";
         file << "Current CPU ticks: " << scheduler.getCurrentTicks() << "\n\n";
         
-        // need to fix layout 
         auto running_processes = scheduler.getRunningProcesses();
         auto finished_processes = scheduler.getFinishedProcesses();
         
         file << "Running processes: " << running_processes.size() << "\n";
         for (const auto& process : running_processes) {
-            file << "  " << process->name << " (ID: " << process->id << ")\n";
+            file << process->name << " (ID: " << process->id << ")\n";
         }
         
         file << "\nFinished processes: " << finished_processes.size() << "\n";
         for (const auto& process : finished_processes) {
-            file << process->name << " (ID: " << process->id << ")\n";
+            auto time_t = std::chrono::system_clock::to_time_t(process->finish_time);
+            std::tm* tm_ptr = std::localtime(&time_t);
+            
+            std::ostringstream timestamp;
+            timestamp << std::put_time(tm_ptr, "%m/%d/%Y, %I:%M:%S%p");
+            
+            std::cout << process->name 
+                    << " (" << timestamp.str() << ") "
+                    << "Finished " << process->instructions.size() << "/" << process->instructions.size()
+                    << "\n";
         }
         
         file.close();

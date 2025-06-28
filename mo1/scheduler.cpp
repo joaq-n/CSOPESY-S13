@@ -110,8 +110,13 @@ double Scheduler::getCPUUtilization() {
 
 int Scheduler::getUsedCores() {
     int used = 0;
-    for (bool busy : cpu_cores_busy) {
-        if (busy) used++;
+    std::lock_guard<std::mutex> lock(scheduler_mutex);
+    
+    // count busy cores
+    for (int i = 0; i < config.num_cpu; i++) {
+        if (cpu_cores_busy[i]) {
+            used++;
+        }
     }
     return used;
 }
@@ -234,9 +239,7 @@ void Scheduler::executeProcesses() {
                 
                 if (!continuing || process->state == ProcessState::FINISHED) {
                     // clear core assignment when process finishes
-                    if (process->state == ProcessState::FINISHED) {
-                        process->cpu_core_assigned = -1;
-                    }
+                    process->cpu_core_assigned = -1;
                     running_processes[i] = nullptr;
                     cpu_cores_busy[i] = false;
                     process_time_slice[i] = 0;
@@ -250,6 +253,12 @@ void Scheduler::executeProcesses() {
             }
         }
     }
+
+    // so no cores stay idle when there are processes in the ready queue
+    if (scheduler_running){
+        scheduleProcess();
+    }
+
 }
 
 std::string Scheduler::generateProcessName() {

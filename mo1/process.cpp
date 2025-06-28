@@ -1,6 +1,8 @@
 #include "process.h"
 #include <random>
 #include <thread>
+#include <sstream>
+#include <iomanip>
 
 int Process::next_id = 1;
 std::mutex Process::id_mutex;
@@ -11,7 +13,7 @@ Process::Process(const std::string& process_name) :
     current_instruction(0),
     sleep_ticks_remaining(0),
     cpu_core_assigned(-1),
-    creation_time(std::chrono::steady_clock::now()),
+    creation_time(std::chrono::system_clock::now()),
     total_instructions_executed(0),
     for_stack_size(0) {
         std::lock_guard<std::mutex> lock(id_mutex);
@@ -24,6 +26,13 @@ Process::Process(const std::string& process_name) :
         }
     }
 
+// fit value within uint16_t range
+uint16_t Process::clamp(int64_t value) {
+    if (value < 0) return 0;
+    if (value > std::numeric_limits<uint16_t>::max()) return std::numeric_limits<uint16_t>::max();
+    return static_cast<uint16_t>(value);
+}
+
 // Sets up parameters for generateInstructionsRecursive()
 // Initiates instruction generation
 void Process::generateRandomInstructions(int min_ins, int max_ins) {
@@ -31,9 +40,9 @@ void Process::generateRandomInstructions(int min_ins, int max_ins) {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> ins_count_dist(min_ins, max_ins);
     std::uniform_int_distribution<> ins_type_dist(0, 5);
-    std::uniform_int_distribution<> value_dist(1, 100);
-    std::uniform_int_distribution<> sleep_dist(1, 10);
-    std::uniform_int_distribution<> for_repeat_dist(2, 5);
+    std::uniform_int_distribution<> value_dist(0, std::numeric_limits<uint16_t>::max());
+    std::uniform_int_distribution<> sleep_dist(0, 255);
+    std::uniform_int_distribution<> for_repeat_dist(1, 3);
     std::uniform_int_distribution<> for_inner_count_dist(1, 3);
     
     int instruction_count = ins_count_dist(gen);
@@ -42,7 +51,7 @@ void Process::generateRandomInstructions(int min_ins, int max_ins) {
 
 // Assigns instructions for the processes (PRINT, DECLARE, ADD, SUBTRACT, SLEEP, FOR)
 // Handles for loops and processes within it
-void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen, 
+void Process::generateInstructionsRecursive(int instruction_count, std::mt19937& gen, 
     std::uniform_int_distribution<>& ins_type_dist,
     std::uniform_int_distribution<>& value_dist,
     std::uniform_int_distribution<>& sleep_dist,
@@ -52,10 +61,10 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
     
     int current_count = 0;
     
-    while (current_count < target_count) {
+    while (current_count < instruction_count) {
         Instruction inst;
         int type = ins_type_dist(gen);
-        
+        int remaining_budget = instruction_count - current_count;
         // Basic Process Instructions
         switch (type) {
             case 0: // PRINT
@@ -95,22 +104,36 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
                 break;
             case 5: // FOR
                 {
+                    // Need at least 3 instructions for a minimal FOR loop (FOR_START + 1 inner + FOR_END)
+                    if (remaining_budget < 3) {
+                        // Not enough budget for FOR loop, generate a simple instruction instead
+                        inst.type = InstructionType::PRINT;
+                        inst.args.push_back("Hello world from " + name + "!");
+                        instructions.push_back(inst);
+                        current_count++;
+                        break;
+                    }
+                    
                     // Add FOR_START (start of loop)
                     inst.type = InstructionType::FOR_START;
                     inst.for_repeats = for_repeat_dist(gen);
                     instructions.push_back(inst);
                     current_count++;
                     
-                    // Generate inner instructions
-                    int inner_count = for_inner_count_dist(gen);
-                    int remaining_budget = target_count - current_count - 1; // -1 for FOR_END
-                    if (inner_count > remaining_budget) {
-                        inner_count = std::max(1, remaining_budget);
-                    }
+                    // Calculate budget for inner instructions (so that instructions don't go beyond max)
+                    int max_inner_budget = remaining_budget - 1 - 1; // reserved 1 for FOR_END and 1 for FOR_START
+                    int desired_inner_count = for_inner_count_dist(gen);
+                    int actual_inner_count = std::min(desired_inner_count, max_inner_budget);
+                    actual_inner_count = std::max(1, actual_inner_count); // At least 1 inner instruction
                     
-                    generateInstructionsRecursive(inner_count, gen, ins_type_dist, value_dist, 
+                    // Generate inner instructions recursively
+                    int instructions_before_inner = instructions.size();
+                    generateInstructionsRecursive(actual_inner_count, gen, ins_type_dist, value_dist, 
                         sleep_dist, for_repeat_dist, for_inner_count_dist, nesting_level + 1);
-                    current_count += inner_count;
+                    
+                    // Count how many instructions were actually added
+                    int actual_inner_added = instructions.size() - instructions_before_inner;
+                    current_count += actual_inner_added;
                     
                     // Add FOR_END (end of loop)
                     Instruction end_inst;
@@ -138,7 +161,7 @@ bool Process::executeNextInstruction(int delays_per_exec) {
      
      if (current_instruction >= instructions.size()) {
         state = ProcessState::FINISHED;
-        finish_time = std::chrono::steady_clock::now();
+        finish_time = std::chrono::system_clock::now();
         return false; // Process finished
     }
 
@@ -167,7 +190,7 @@ void Process::executeInstruction(const Instruction& inst) {
             if (inst.args.size() >= 2) {
                 std::string var_name = inst.args[0];
                 uint16_t value = static_cast<uint16_t>(std::stoi(inst.args[1]));
-                variables[var_name] = value;
+                variables[var_name] = clamp(value);
             }
             break;
         }
@@ -176,7 +199,8 @@ void Process::executeInstruction(const Instruction& inst) {
                 std::string result_var = inst.args[0];
                 uint16_t val1 = std::stoi(evaluateExpression(inst.args[1]));
                 uint16_t val2 = std::stoi(evaluateExpression(inst.args[2]));
-                variables[result_var] = val1 + val2;
+                uint64_t result = val1 + val2;
+                variables[result_var] = clamp(result);
             }
             break;
         }
@@ -185,7 +209,8 @@ void Process::executeInstruction(const Instruction& inst) {
                 std::string result_var = inst.args[0];
                 uint16_t val1 = std::stoi(evaluateExpression(inst.args[1]));
                 uint16_t val2 = std::stoi(evaluateExpression(inst.args[2]));
-                variables[result_var] = (val1 > val2) ? val1 - val2 : 0;
+                uint64_t result = val1 - val2;
+                variables[result_var] = clamp(result);
             }
             break;
         }
@@ -199,7 +224,7 @@ void Process::executeInstruction(const Instruction& inst) {
         case InstructionType::FOR_START: {
             // Push current position onto for stack
             if (for_stack_size < 3) {
-                for_stack[for_stack_size] = current_instruction; // Store FOR_START position
+                for_stack[for_stack_size] = current_instruction; // Store start position
                 for_current_repeat[for_stack_size] = 1; // Start with iteration 1
                 for_stack_size++;
             }
@@ -216,7 +241,7 @@ void Process::executeInstruction(const Instruction& inst) {
                 // Check if we need more iterations
                 if (for_current_repeat[current_level] < for_start_inst.for_repeats) {
                     for_current_repeat[current_level]++;
-                    current_instruction = for_start_index; // Jump back to FOR_START
+                    current_instruction = for_start_index; // Jump back to start
                 } else {
                     for_stack_size--;
                 }
@@ -235,5 +260,16 @@ std::string Process::evaluateExpression(const std::string& expr) {
 }
 
 void Process::addOutput(const std::string& output) {
-    output_logs.push_back(output);
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm* tm_ptr = std::localtime(&time_t);
+    
+    std::ostringstream timestamp;
+    timestamp << std::put_time(tm_ptr, "%m/%d/%Y %I:%M:%S%p");
+    
+    // Format: (timestamp) Core:X - original_output
+    std::string formatted_output = "(" + timestamp.str() + ") Core:" + 
+                                  std::to_string(cpu_core_assigned) + " " + output;
+    
+    output_logs.push_back(formatted_output);
 }
