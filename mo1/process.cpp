@@ -18,6 +18,9 @@ Process::Process(const std::string& process_name) :
     for_stack_size(0) {
         std::lock_guard<std::mutex> lock(id_mutex);
         id = next_id++;
+
+        // added for test case
+        // variables["x"] = 0;
         
         // Initialize for loop tracking
         for (int i = 0; i < 3; i++) {
@@ -32,6 +35,36 @@ uint16_t Process::clamp(int64_t value) {
     if (value > std::numeric_limits<uint16_t>::max()) return std::numeric_limits<uint16_t>::max();
     return static_cast<uint16_t>(value);
 }
+
+// for the test case during the mo1 quiz
+// void Process::generateRandomInstructions(int min_ins, int max_ins) {
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_int_distribution<> ins_count_dist(min_ins, max_ins);
+//     std::uniform_int_distribution<> add_value_dist(1, 10); // Random value 1-10 for ADD operations
+    
+//     int instruction_count = ins_count_dist(gen);
+    
+//     // Generate alternating PRINT and ADD instructions
+//     for (int i = 0; i < instruction_count; i++) {
+//         Instruction inst;
+        
+//         if (i % 2 == 0) {
+//             // Even index: PRINT instruction
+//             inst.type = InstructionType::PRINT;
+//             inst.args.push_back("Value from: x");
+//             instructions.push_back(inst);
+//         } else {
+//             // Odd index: ADD instruction
+//             inst.type = InstructionType::ADD;
+//             inst.args.push_back("x"); // result variable
+//             inst.args.push_back("x"); // first operand (current value of x)
+//             inst.args.push_back(std::to_string(add_value_dist(gen))); // second operand (random 1-10)
+//             instructions.push_back(inst);
+//         }
+//     }
+// }
+
 
 // Sets up parameters for generateInstructionsRecursive()
 // Initiates instruction generation
@@ -185,6 +218,15 @@ void Process::executeInstruction(const Instruction& inst) {
             std::string output = inst.args[0];
             addOutput(output);
             break;
+
+            // from mo1 quiz test case
+            // std::string output = inst.args[0];
+            // // Replace "x" in the output with the actual value of variable x
+            // if (output == "Value from: x") {
+            //     output = "Value from: " + std::to_string(variables["x"]);
+            // }
+            // addOutput(output);
+            // break;
         }
         case InstructionType::DECLARE: {
             if (inst.args.size() >= 2) {
