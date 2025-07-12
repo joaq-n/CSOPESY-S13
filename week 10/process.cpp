@@ -1,3 +1,5 @@
+// Fixed version of process.cpp with proper instruction limit enforcement
+
 #include "process.h"
 #include <random>
 #include <thread>
@@ -12,7 +14,7 @@ Process::Process(const std::string& process_name) :
     sleep_ticks_remaining(0),
     cpu_core_assigned(-1),
     creation_time(std::chrono::steady_clock::now()),
-        total_instructions_executed(0),
+    total_instructions_executed(0),
     for_stack_size(0) {
     
     std::lock_guard<std::mutex> lock(id_mutex);
@@ -36,7 +38,11 @@ void Process::generateRandomInstructions(int min_ins, int max_ins) {
     std::uniform_int_distribution<> for_inner_count_dist(1, 3);
     
     int instruction_count = ins_count_dist(gen);
-    generateInstructionsRecursive(instruction_count, gen, ins_type_dist, value_dist, sleep_dist, for_repeat_dist, for_inner_count_dist, 0);
+    int max_total_instructions = instruction_count; // Track the absolute maximum
+    
+    generateInstructionsRecursive(instruction_count, gen, ins_type_dist, value_dist, 
+                                sleep_dist, for_repeat_dist, for_inner_count_dist, 
+                                0, max_total_instructions);
 }
 
 void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen, 
@@ -45,11 +51,12 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
     std::uniform_int_distribution<>& sleep_dist,
     std::uniform_int_distribution<>& for_repeat_dist,
     std::uniform_int_distribution<>& for_inner_count_dist,
-    int nesting_level) {
+    int nesting_level,
+    int& max_total_instructions) {
     
     int current_count = 0;
     
-    while (current_count < target_count) {
+    while (current_count < target_count && (int)instructions.size() < max_total_instructions) {
         Instruction inst;
         int type = ins_type_dist(gen);
         
@@ -92,28 +99,49 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
                 break;
             case 5: // FOR
                 {
+                    // Check if we have enough space for at least 3 instructions (FOR_START + 1 inner + FOR_END)
+                    if ((int)instructions.size() + 3 > max_total_instructions) {
+                        // Not enough space for a FOR loop, generate a simple instruction instead
+                        inst.type = InstructionType::PRINT;
+                        inst.args.push_back("Hello world from " + name + "!");
+                        instructions.push_back(inst);
+                        current_count++;
+                        break;
+                    }
+                    
                     // Add FOR_START (start of loop)
                     inst.type = InstructionType::FOR_START;
                     inst.for_repeats = for_repeat_dist(gen);
                     instructions.push_back(inst);
                     current_count++;
                     
-                    // Generate inner instructions
+                    // Calculate how many instructions we can still add
+                    int remaining_space = max_total_instructions - (int)instructions.size() - 1; // -1 for FOR_END
+                    
+                    // Generate inner instructions (limited by remaining space)
                     int inner_count = for_inner_count_dist(gen);
+                    if (inner_count > remaining_space) {
+                        inner_count = std::max(1, remaining_space);
+                    }
+                    
+                    // Calculate remaining budget for this recursive call
                     int remaining_budget = target_count - current_count - 1; // -1 for FOR_END
                     if (inner_count > remaining_budget) {
                         inner_count = std::max(1, remaining_budget);
                     }
                     
                     generateInstructionsRecursive(inner_count, gen, ins_type_dist, value_dist, 
-                        sleep_dist, for_repeat_dist, for_inner_count_dist, nesting_level + 1);
+                        sleep_dist, for_repeat_dist, for_inner_count_dist, nesting_level + 1, 
+                        max_total_instructions);
                     current_count += inner_count;
                     
-                    // Add FOR_END (end of loop)
-                    Instruction end_inst;
-                    end_inst.type = InstructionType::FOR_END;
-                    instructions.push_back(end_inst);
-                    current_count++;
+                    // Add FOR_END (end of loop) - but only if we have space
+                    if ((int)instructions.size() < max_total_instructions) {
+                        Instruction end_inst;
+                        end_inst.type = InstructionType::FOR_END;
+                        instructions.push_back(end_inst);
+                        current_count++;
+                    }
                 }
                 break;
             default:
@@ -127,16 +155,39 @@ void Process::generateInstructionsRecursive(int target_count, std::mt19937& gen,
 }
 
 bool Process::executeNextInstruction(int delays_per_exec) {
-     if (sleep_ticks_remaining > 0) {
-         state = ProcessState::WAITING;
-     }
-     current_instruction++;
-     if (current_instruction >= instructions.size()) {
+    if (current_instruction >= instructions.size()) {
         state = ProcessState::FINISHED;
         finish_time = std::chrono::steady_clock::now();
         return false; // Process finished
     }
-
+    
+    const Instruction& inst = instructions[current_instruction];
+    
+    // Handle sleep state
+    if (sleep_ticks_remaining > 0) {
+        sleep_ticks_remaining--;
+        if (sleep_ticks_remaining == 0) {
+            state = ProcessState::READY;
+        } else {
+            state = ProcessState::WAITING;
+            return true; // Don't advance instruction while sleeping
+        }
+    }
+    
+    // Execute the current instruction
+    executeInstruction(inst);
+    total_instructions_executed++;
+    
+    // Advance to next instruction
+    current_instruction++;
+    
+    // Check if finished
+    if (current_instruction >= instructions.size()) {
+        state = ProcessState::FINISHED;
+        finish_time = std::chrono::steady_clock::now();
+        return false; // Process finished
+    }
+    
     if (delays_per_exec > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(delays_per_exec));
     }

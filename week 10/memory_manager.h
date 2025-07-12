@@ -15,7 +15,7 @@ struct MemoryBlock {
     size_t start_address;
     size_t size;
     bool is_free;
-    Process* process; // nullptr if free
+    Process* process;
     
     MemoryBlock(size_t start, size_t sz, bool free = true, Process* proc = nullptr) 
         : start_address(start), size(sz), is_free(free), process(proc) {}
@@ -100,21 +100,49 @@ public:
         return count;
     }
     
-    // Get total external fragmentation
+    // Get total external fragmentation - FIXED VERSION
     size_t getTotalExternalFragmentation() const {
-        size_t total_free = 0;
-        size_t largest_free = 0;
+        size_t total_fragmentation = 0;
+        int free_block_count = 0;
         
         for (const auto& block : memory_blocks) {
             if (block.is_free) {
-                total_free += block.size;
-                largest_free = std::max(largest_free, block.size);
+                free_block_count++;
+                // Only count blocks that are smaller than what's needed for a process
+                if (block.size < memory_per_process) {
+                    total_fragmentation += block.size;
+                }
             }
         }
         
-        return total_free - largest_free;
+        // Alternative calculation: sum of all free blocks except the largest one
+        // This gives a better representation of unusable fragmented memory
+        if (free_block_count > 1) {
+            std::vector<size_t> free_sizes;
+            for (const auto& block : memory_blocks) {
+                if (block.is_free) {
+                    free_sizes.push_back(block.size);
+                }
+            }
+            
+            if (!free_sizes.empty()) {
+                // Sort to find the largest free block
+                std::sort(free_sizes.begin(), free_sizes.end(), std::greater<size_t>());
+                
+                // Sum all free blocks except the largest one
+                size_t fragmentation_alt = 0;
+                for (size_t i = 1; i < free_sizes.size(); i++) {
+                    fragmentation_alt += free_sizes[i];
+                }
+                
+                // Return the maximum of both calculations
+                return std::max(total_fragmentation, fragmentation_alt);
+            }
+        }
+        
+        return total_fragmentation;
     }
-    
+
     // Generate memory snapshot file
     void generateMemorySnapshot() {
         quantum_cycle_counter++;

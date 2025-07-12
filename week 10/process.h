@@ -53,13 +53,14 @@ public:
 private:
     void executeInstruction(const Instruction& inst);
     std::string evaluateExpression(const std::string& expr);
+
     void generateInstructionsRecursive(int target_count, std::mt19937& gen, 
         std::uniform_int_distribution<>& ins_type_dist,
         std::uniform_int_distribution<>& value_dist,
         std::uniform_int_distribution<>& sleep_dist,
         std::uniform_int_distribution<>& for_repeat_dist,
         std::uniform_int_distribution<>& for_inner_count_dist,
-        int nesting_level);
+        int nesting_level, int& max_total_instructions);
 };
 
 #endif
