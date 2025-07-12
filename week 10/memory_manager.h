@@ -147,7 +147,7 @@ public:
     void generateMemorySnapshot() {
         quantum_cycle_counter++;
         
-        // Get current timestamp
+        // get current timestamp
         auto now = std::chrono::system_clock::now();
         auto time_t = std::chrono::system_clock::to_time_t(now);
         std::tm* tm_ptr = std::localtime(&time_t);
@@ -155,7 +155,7 @@ public:
         std::ostringstream timestamp;
         timestamp << std::put_time(tm_ptr, "%m/%d/%Y %H:%M:%S");
         
-        // Create filename
+        // create filename
         std::string filename = "memory_stamp_" + std::to_string(quantum_cycle_counter) + ".txt";
         
         std::ofstream file(filename);
@@ -163,33 +163,39 @@ public:
             return;
         }
         
-        // Write header information
+        // header
         file << "Timestamp: (" << timestamp.str() << ")\n";
         file << "Number of processes in memory: " << getProcessesInMemory() << "\n";
         file << "Total external fragmentation in KB: " << getTotalExternalFragmentation() << "\n";
         file << "\n";
         
-        // Write memory layout
+        // Write memory layout with upper and lower limits for each process
         file << "----end---- = " << total_memory << "\n";
         
-        // Sort blocks by start address for proper display
+        // Sort blocks by start address for proper display (highest address first)
         std::vector<MemoryBlock> sorted_blocks = memory_blocks;
         std::sort(sorted_blocks.begin(), sorted_blocks.end(), 
-                  [](const MemoryBlock& a, const MemoryBlock& b) {
-                      return a.start_address < b.start_address;
-                  });
+                [](const MemoryBlock& a, const MemoryBlock& b) {
+                    return a.start_address > b.start_address; // Sort in descending order
+                });
         
         // Write memory blocks from top to bottom
-        for (auto it = sorted_blocks.rbegin(); it != sorted_blocks.rend(); ++it) {
-            const auto& block = *it;
-            
+        for (const auto& block : sorted_blocks) {
             if (block.is_free) {
+                // Free block - just show the address range
+                file << block.start_address + block.size << "\n";
+                if (block.start_address > 0) {
+                    file << "\n"; // Empty line for free space
+                }
                 file << block.start_address << "\n";
             } else {
+                // Allocated block - show process name and its limits
+                size_t upper_limit = block.start_address + block.size;
+                size_t lower_limit = block.start_address;
+                
+                file << upper_limit << "\n";
                 file << block.process->name << "\n";
-                file << block.start_address + block.size << "\n";
-                file << "\n";
-                file << block.start_address << "\n";
+                file << lower_limit << "\n";
             }
         }
         

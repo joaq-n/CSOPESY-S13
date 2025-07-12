@@ -157,12 +157,15 @@ void Scheduler::schedulerLoop() {
             executeProcesses();
         }
         
-        // Generate memory snapshot every quantum cycle
+        // generate memory snapshot every quantum cycle only
         if (cpu_ticks % config.quantum_cycles == 0) {
-            memory_manager->generateMemorySnapshot();
+            // check: only create snapshot if there are processes in memory
+            if (process_generation_active || memory_manager->getProcessesInMemory() > 0) {
+                memory_manager->generateMemorySnapshot();
+            }
         }
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 100ms per tick
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
